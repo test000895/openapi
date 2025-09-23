@@ -1,189 +1,361 @@
-openapi: 3.1.0
-info:
-  title: PetSitter API
-  version: "0.1"
-servers:
-  - url: /
-paths:
-  /jobs:
-    post:
-      tags:
-      - Jobs
-      summary: Create Job
-      operationId: createJob
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Job'
-      responses:
-        '201': 
-          description: Created
-          headers:
-            Location:
-              schema:
-                type: string
-        '400': 
-          description: Bad request
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem' 
-        '401': 
-          description: Unauthorized
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problem' 
-        '403': 
-          description: Forbidden
-          content:
-            application/problem+json: 
-              schema:
-                $ref: '#/components/schemas/Problem' 
-    get:
-      tags:
-      - Jobs
-      summary: List/Search Available Jobs
-      operationId: ListOrSearchAvailableJobs
-      parameters:     
-      - name: start_time_after
-        in: query
-        description: Search jobs starting after this date and time.
-        schema:
-          type: string
-          format: date-time      
-      - name: activity
-        in: query
-        description: Performs a full-text search for the phrase entered in job activities.
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: The maximum number of results to return.
-        schema:
-          type: integer
-          default: 20
-          maximum: 100
-      - name: cursor
-        in: query
-        description: Use the cursor from the response to access more results.
-        schema:
-          type: string
-      - name: sort
-        in: query
-        description: |
-          Indicate the sorting key and direction for the results.
-          Use the field name, suffixed with ":asc" for ascending
-          or ":desc" for descending order.
-          Valid fields: start_time, end_time
-        schema:
-          type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Job'
-                  cursor:
-                    type: string
-                    description: Cursor for the next result page.
-                    
-components:
-  schemas:
-    Job:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true 
-        creator_user_id:
-          type: integer
-          readOnly: true 
-        start_time:
-          type: string
-          format: date-time 
-        end_time:
-          type: string
-          format: date-time 
-        activity:
-          type: string
-          minLength: 5 
-          maxLength: 500
-        dog:
-          allOf:
-          - $ref: '#/components/schemas/Dog'
-          - description: |
-              This is deprecated, prefer to use `pets`.
-              If both exist, `dog` will be ignored and `pets` will be used.
-            deprecated: true 
-        pets:
-          type: array
-          minItems: 1 
-          maxItems: 10
-          items:
-            $ref: '#/components/schemas/Pet'
-    Dog:
-      type: object
-      properties:
-        species:
-          type: string
-        breed:
-          type: string
-        size:
-          type: string
-      required:
-        - species
-    Cat:
-      type: object
-      properties:
-        species:
-          type: string
-        breed:
-          type: string
-      required:
-        - species
-    Pet:
-      allOf:
-        - type: object
-          properties:
-            name:
-              type: string
-              minLength: 2
-              maxLength: 20
-            age:
-              type: integer
-              minimum: 1
-              maximum: 100
-        - oneOf:
-            - $ref: '#/components/schemas/Cat'
-            - $ref: '#/components/schemas/Dog'
-          discriminator:
-            propertyName: species
-            mapping:
-              Cat: '#/components/schemas/Cat'
-              Dog: '#/components/schemas/Dog'
-    Problem: 
-      type: object
-      properties:
-        type:
-          type: string
-          description: URI indicating error type
-        title:
-          type: string
-          description: Human-readable error title
-        status:
-          type: integer
-          description: HTTP status code
-        detail:
-          type: string
-          description: Human-readable error details
-        instance:
-          type: string
-          description: URI indicating error instance
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "PetSitter API",
+        "version": "0.1"
+    },
+    "servers": [
+        {
+            "url": "/"
+        }
+    ],
+    "paths": {
+        "/jobs": {
+            "post": {
+                "tags": [
+                    "Jobs"
+                ],
+                "summary": "Create Job",
+                "operationId": "createJob",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Job"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "headers": {
+                            "Location": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Problem"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Problem"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Problem"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "tags": [
+                    "Jobs"
+                ],
+                "summary": "List/Search Available Jobs",
+                "operationId": "listOrSearchAvailableJobs",
+                "parameters": [
+                    {
+                        "name": "start_time_before",
+                        "in": "query",
+                        "description": "Search jobs starting before this date and time.",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "start_time_after",
+                        "in": "query",
+                        "description": "Search jobs starting after this date and time.",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "The maximum number of results to return.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "description": "Use the cursor from the response to access more results.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Indicate the sorting key and direction for the results.\nUse the field name, suffixed with \":asc\" for ascending\nor \":desc\" for descending order.\nValid fields: start_time, end_time\n",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "items": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Job"
+                                            }
+                                        },
+                                        "cursor": {
+                                            "type": "string",
+                                            "description": "Cursor for the next result page.",
+                                            "nullable": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "format": "password",
+                        "writeOnly": true,
+                        "minLength": 8
+                    },
+                    "full_name": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 50
+                    },
+                    "roles": {
+                        "type": "array",
+                        "minItems": 1,
+                        "uniqueItems": true,
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "PetOwner",
+                                "PetSitter",
+                                "Admin"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "email",
+                    "full_name",
+                    "roles"
+                ]
+            },
+            "Job": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "creator_user_id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_time": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "activity": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 500
+                    },
+                    "dog": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Dog"
+                            },
+                            {
+                                "description": "This is deprecated, prefer to use `pets`.\nIf both exist, `dog` will be ignored and `pets` will be used.\n",
+                                "deprecated": true
+                            }
+                        ]
+                    },
+                    "pets": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "items": {
+                            "$ref": "#/components/schemas/Pet"
+                        }
+                    }
+                }
+            },
+            "Dog": {
+                "type": "object",
+                "properties": {
+                    "species": {
+                        "type": "string"
+                    },
+                    "breed": {
+                        "type": "string"
+                    },
+                    "size": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "species"
+                ]
+            },
+            "Cat": {
+                "type": "object",
+                "properties": {
+                    "species": {
+                        "type": "string"
+                    },
+                    "breed": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "species"
+                ]
+            },
+            "Pet": {
+                "allOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 20
+                            },
+                            "age": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100
+                            }
+                        }
+                    },
+                    {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Cat"
+                            },
+                            {
+                                "$ref": "#/components/schemas/Dog"
+                            }
+                        ],
+                        "discriminator": {
+                            "propertyName": "species",
+                            "mapping": {
+                                "Cat": "#/components/schemas/Cat",
+                                "Dog": "#/components/schemas/Dog"
+                            }
+                        }
+                    }
+                ]
+            },
+            "JobApplication": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "default": "applying",
+                        "enum": [
+                            "applying",
+                            "approved",
+                            "rejected"
+                        ]
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "job_id": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                }
+            },
+            "Problem": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "description": "URI indicating error type"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Human-readable error title"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "description": "HTTP status code"
+                    },
+                    "detail": {
+                        "type": "string",
+                        "description": "Human-readable error details"
+                    },
+                    "instance": {
+                        "type": "string",
+                        "description": "URI indicating error instance"
+                    }
+                }
+            }
+        }
+    }
+}
